@@ -17,10 +17,22 @@ if(isset($response['ORDERID']) && isset($response['STATUS']) && isset($response[
 	$txnid  = $response['ORDERID'];	
 	$txnid  = checkCbInvoiceID($txnid,'paytm');	
 	
+	$result = mysql_fetch_assoc(select_query('tblinvoices', 'total, userid', array("id"=>$txnid)));
+	$amount=$response['TXNAMOUNT'];
+	// Check if amount is INR, convert if not.
+	$result = mysql_fetch_assoc(select_query('tblclients', 'currency', array("id"=>$result['userid'])));
+	$currency_id = $result['currency'];
+	$result = mysql_fetch_array(select_query("tblcurrencies", "id", array("code"=>'INR')));
+	$inr_id = $result['id'];
+	if($currency_id != $inr_id) {
+    		$amount = convertCurrency($amount, $currency_id, $inr_id);
+	} else {
+    		$amount = $amount;
+	}
+	
 	$status =$response['STATUS'];
 	$paytm_trans_id = $response['TXNID'];
-	$checksum_recv='';	
-	$amount=$response['TXNAMOUNT'];
+	$checksum_recv='';
 	if(isset($response['CHECKSUMHASH'])){
 		$checksum_recv=$response['CHECKSUMHASH'];
 	}
